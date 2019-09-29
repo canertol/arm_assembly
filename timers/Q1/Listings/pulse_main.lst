@@ -1,0 +1,88 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000         ;*******************************************************
+                       ********
+    2 00000000         ; Program pulse_main.s
+    3 00000000         
+    4 00000000         
+    5 00000000         ;*******************************************************
+                       ******** 
+    6 00000000         ; EQU Directives
+    7 00000000         
+    8 00000000         ;*******************************************************
+                       ********
+    9 00000000         ;LABEL  DIRECTIVE VALUE  COMMENTs
+   10 00000000         
+   11 00000000         ;*******************************************************
+                       ********
+   12 00000000         ;LABEL  DIRECTIVE VALUE  COMMENT
+   13 00000000                 AREA             main, READONLY, CODE
+   14 00000000                 THUMB
+   15 00000000                 EXTERN           My_Timer0A_Handler ; Reference 
+                                                            external subroutine
+                                                            s
+   16 00000000                 EXTERN           PULSE_INIT  ;
+   17 00000000                 EXPORT           __main      ; Make available
+   18 00000000         
+   19 00000000 F7FF FFFE 
+                       __main  BL               PULSE_INIT
+   20 00000004 E7FE            B                .
+   21 00000006         
+   22 00000006                 END
+Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M4.fp --apcs=int
+erwork --depend=.\objects\pulse_main.d -o.\objects\pulse_main.o -I.\RTE\_Target
+_1 -IC:\Keil_v5\ARM\PACK\Keil\TM4C_DFP\1.1.0\Device\Include\TM4C123 -IC:\Keil_v
+5\ARM\CMSIS\Include --predefine="__EVAL SETA 1" --predefine="__UVISION_VERSION 
+SETA 526" --predefine="TM4C123GH6PM SETA 1" --list=.\listings\pulse_main.lst pu
+lse_main.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+__main 00000000
+
+Symbol: __main
+   Definitions
+      At line 19 in file pulse_main.s
+   Uses
+      At line 17 in file pulse_main.s
+Comment: __main used once
+main 00000000
+
+Symbol: main
+   Definitions
+      At line 13 in file pulse_main.s
+   Uses
+      None
+Comment: main unused
+2 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+External symbols
+
+My_Timer0A_Handler 00000000
+
+Symbol: My_Timer0A_Handler
+   Definitions
+      At line 15 in file pulse_main.s
+   Uses
+      None
+Comment: My_Timer0A_Handler unused
+PULSE_INIT 00000000
+
+Symbol: PULSE_INIT
+   Definitions
+      At line 16 in file pulse_main.s
+   Uses
+      At line 19 in file pulse_main.s
+Comment: PULSE_INIT used once
+2 symbols
+338 symbols in table

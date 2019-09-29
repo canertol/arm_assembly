@@ -1,0 +1,850 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000         ;*******************************************************
+                       ********
+    2 00000000         ; Program pulse_probe.s
+    3 00000000         ;*******************************************************
+                       ******** 
+    4 00000000         ;LABEL  DIRECTIVE VALUE  COMMENT
+    5 00000000                 AREA             sdata, DATA, READONLY
+    6 00000000                 THUMB
+    7 00000000 50 75 6C 
+              73 65 20 
+              77 69 64 
+              74 68 20 
+              69 73 20 PWIDTH  DCB              "Pulse width is "
+    8 0000000F 50 65 72 
+              69 6F 64 
+              20 69 73 
+              20 20    PERIOD  DCB              "Period is  "
+    9 0000001A 44 75 74 
+              79 20 63 
+              79 63 6C 
+              65 20 69 
+              73 20 20 DUTY    DCB              "Duty cycle is  "
+   10 00000029         ;*******************************************************
+                       ******** 
+   11 00000029         ; EQU Directives
+   12 00000029         
+   13 00000029         ;*******************************************************
+                       ********
+   14 00000029         ;LABEL  DIRECTIVE VALUE  COMMENTs
+   15 00000029 40031000 
+                       TIMER1_CFG
+                               EQU              0x40031000
+   16 00000029 40031004 
+                       TIMER1_TAMR
+                               EQU              0x40031004
+   17 00000029 4003100C 
+                       TIMER1_CTL
+                               EQU              0x4003100C
+   18 00000029 40031018 
+                       TIMER1_IMR
+                               EQU              0x40031018
+   19 00000029 4003101C 
+                       TIMER1_RIS
+                               EQU              0x4003101C  ; Timer Interrupt S
+                                                            tatus
+   20 00000029 40031024 
+                       TIMER1_ICR
+                               EQU              0x40031024  ; Timer Interrupt C
+                                                            lear
+   21 00000029 40031028 
+                       TIMER1_TAILR
+                               EQU              0x40031028  ; Timer interval
+   22 00000029 40031030 
+                       TIMER1_TAMATCHR
+                               EQU              0x40031030  ; Match Register
+   23 00000029 40031038 
+                       TIMER1_TAPR
+                               EQU              0x40031038
+   24 00000029 40031048 
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+                       TIMER1_TAR
+                               EQU              0x40031048  ; Timer register
+   25 00000029         
+   26 00000029         ;GPIO Registers
+   27 00000029 40005040 
+                       GPIO_PORTB_DATA
+                               EQU              0x40005040  ; Access PB4
+   28 00000029 40005400 
+                       GPIO_PORTB_DIR
+                               EQU              0x40005400  ; Port Direction
+   29 00000029 40005420 
+                       GPIO_PORTB_AFSEL
+                               EQU              0x40005420  ; Alt Function enab
+                                                            le
+   30 00000029 4000551C 
+                       GPIO_PORTB_DEN
+                               EQU              0x4000551C  ; Digital Enable
+   31 00000029 40005528 
+                       GPIO_PORTB_AMSEL
+                               EQU              0x40005528  ; Analog enable
+   32 00000029 4000552C 
+                       GPIO_PORTB_PCTL
+                               EQU              0x4000552C  ; Alternate Functio
+                                                            ns
+   33 00000029         
+   34 00000029         ;System Registers
+   35 00000029 400FE608 
+                       SYSCTL_RCGCGPIO
+                               EQU              0x400FE608  ; GPIO Gate Control
+                                                            
+   36 00000029 400FE604 
+                       SYSCTL_RCGCTIMER
+                               EQU              0x400FE604  ; GPTM Gate Control
+                                                            
+   37 00000029         
+   38 00000029         ;*******************************************************
+                       ********
+   39 00000029         ;LABEL  DIRECTIVE VALUE  COMMENT
+   40 00000029                 AREA             main, READONLY, CODE
+   41 00000000                 THUMB
+   42 00000000                 EXTERN           My_Timer0A_Handler ; Reference 
+                                                            external subroutine
+                                                            s
+   43 00000000                 EXTERN           PULSE_INIT  ;
+   44 00000000                 EXTERN           PULSE_PROBE
+   45 00000000                 EXTERN           My_Timer1A_Handler
+   46 00000000                 EXTERN           CONVRT
+   47 00000000                 EXTERN           DELAY100
+   48 00000000                 EXTERN           OutChar
+   49 00000000                 EXPORT           __main      ; Make available
+   50 00000000         
+   51 00000000 F7FF FFFE 
+                       __main  BL               PULSE_INIT
+   52 00000004         
+   53 00000004 498F            LDR              R1, =SYSCTL_RCGCGPIO 
+                                                            ; start GPIO clock
+   54 00000006 6808            LDR              R0, [R1]
+   55 00000008 F040 0002       ORR              R0, R0, #0x02 ; set bit 2 for p
+                                                            ort B
+
+
+
+ARM Macro Assembler    Page 3 
+
+
+   56 0000000C 6008            STR              R0, [R1]
+   57 0000000E BF00            NOP                          ; allow clock to se
+                                                            ttle
+   58 00000010 BF00            NOP
+   59 00000012 BF00            NOP
+   60 00000014 498C            LDR              R1, =GPIO_PORTB_DIR ; set direc
+                                                            tion of PB4
+   61 00000016 6808            LDR              R0, [R1]
+   62 00000018 F020 0010       BIC              R0, #0x10   ; clear bit 4 for I
+                                                            NPUT
+   63 0000001C 6008            STR              R0, [R1]
+   64 0000001E         
+   65 0000001E 498B            LDR              R1, =GPIO_PORTB_AFSEL ; enable 
+                                                            port function
+   66 00000020 6808            LDR              R0, [R1]
+   67 00000022 F040 0010       ORR              R0, #0x10   ; set bit4 for alte
+                                                            rnate fuction on PB
+                                                            4
+   68 00000026 6008            STR              R0, [R1]
+   69 00000028         ; Set bits 27:24 of PCTL to 7 to enable TIMER1A on PB4
+   70 00000028 4989            LDR              R1, =GPIO_PORTB_PCTL
+   71 0000002A 6808            LDR              R0, [R1]
+   72 0000002C F440 20E0       ORR              R0, R0, #0x00070000
+   73 00000030 6008            STR              R0, [R1]
+   74 00000032         ; clear AMSEL to disable analog
+   75 00000032 4988            LDR              R1, =GPIO_PORTB_AMSEL
+   76 00000034 F04F 0000       MOV              R0, #0
+   77 00000038 6008            STR              R0, [R1]
+   78 0000003A         
+   79 0000003A 4987            LDR              R1, =GPIO_PORTB_DEN ; enable po
+                                                            rt digital
+   80 0000003C 6808            LDR              R0, [R1]
+   81 0000003E F040 0010       ORR              R0, R0, #0x10
+   82 00000042 6008            STR              R0, [R1]
+   83 00000044         
+   84 00000044 4985            LDR              R1, =SYSCTL_RCGCTIMER 
+                                                            ; Start Timer1
+   85 00000046 680A            LDR              R2, [R1]
+   86 00000048 F042 0202       ORR              R2, R2, #0x02
+   87 0000004C 600A            STR              R2, [R1]
+   88 0000004E BF00            NOP                          ; allow clock to se
+                                                            ttle
+   89 00000050 BF00            NOP
+   90 00000052 BF00            NOP
+   91 00000054         
+   92 00000054 4982            LDR              R1, =TIMER1_CTL ; disable timer
+                                                             during setup
+   93 00000056 680A            LDR              R2, [R1]
+   94 00000058 F022 0201       BIC              R2, R2, #0x01
+   95 0000005C 600A            STR              R2, [R1]
+   96 0000005E         ; set to 16bit Timer Mode
+   97 0000005E 4981            LDR              R1, =TIMER1_CFG
+   98 00000060 F04F 0204       MOV              R2, #0x04   ; set bits 2:0 to 0
+                                                            x04 for 16bit timer
+                                                            
+   99 00000064 600A            STR              R2, [R1]
+  100 00000066         ; set to EDGE TIME, count DOWN
+  101 00000066 4980            LDR              R1, =TIMER1_TAMR
+  102 00000068 F04F 021F       MOV              R2, #0x1F
+
+
+
+ARM Macro Assembler    Page 4 
+
+
+  103 0000006C 600A            STR              R2, [R1]
+  104 0000006E         ; set edge detection to both
+  105 0000006E 497C            LDR              R1, =TIMER1_CTL
+  106 00000070 680A            LDR              R2, [R1]
+  107 00000072 F042 020E       ORR              R2, R2, #0x0E ; set bits 3:2 to
+                                                             0x03
+  108 00000076 600A            STR              R2, [R1]
+  109 00000078         
+  110 00000078 497C            LDR              R1, =TIMER1_TAPR
+  111 0000007A F04F 020F       MOV              R2, #15     ; divide clock by 1
+                                                            6 to
+  112 0000007E 600A            STR              R2, [R1]    ; get 1us clocks
+  113 00000080         ; set start value
+  114 00000080 497B            LDR              R1, =TIMER1_TAILR
+  115 00000082 F64F 72FF       LDR              R2, =0xFFFF
+  116 00000086 600A            STR              R2, [R1]
+  117 00000088         
+  118 00000088 497A            LDR              R1, =TIMER1_IMR ; disable timeo
+                                                            ut interrupt
+  119 0000008A F04F 0200       MOV              R2, #0x00
+  120 0000008E 600A            STR              R2, [R1]
+  121 00000090         
+  122 00000090         ; Enable timer
+  123 00000090 4973            LDR              R1, =TIMER1_CTL
+  124 00000092 680A            LDR              R2, [R1]
+  125 00000094 F042 020F       ORR              R2, R2, #0x0F ; set bit0 to ena
+                                                            ble, bit 1 to stall
+                                                             on debug 
+  126 00000098 600A            STR              R2, [R1]    ; and bit2:3 to tri
+                                                            gger on BOTH EDGES
+  127 0000009A F04F 0803       MOV              R8, #3
+  128 0000009E BF00            NOP
+  129 000000A0 BF00            NOP
+  130 000000A2 BF00            NOP
+  131 000000A4         
+  132 000000A4         ; clear interrupt flag
+  133 000000A4         ; LDR R0, =TIMER1_ICR 
+  134 000000A4         ; MOV R1, #0x05
+  135 000000A4         ; STR R1, [R0]
+  136 000000A4         ; Await edge capture event
+  137 000000A4         
+  138 000000A4 4974    loop    LDR              R1, =TIMER1_RIS
+  139 000000A6 680A            LDR              R2, [R1]
+  140 000000A8 F012 0204       ANDS             R2, #0x04   ; isolate CAERIS bi
+                                                            t
+  141 000000AC         ;CMP R2, #0x04
+  142 000000AC D0FA            BEQ              loop        ; if no capture, th
+                                                            en loop
+  143 000000AE         
+  144 000000AE         ; clear interrupt flag
+  145 000000AE 4873            LDR              R0, =TIMER1_ICR
+  146 000000B0 F04F 0104       MOV              R1, #0x04
+  147 000000B4 6001            STR              R1, [R0]
+  148 000000B6         
+  149 000000B6         ; take timer value
+  150 000000B6 4E72            LDR              R6, =TIMER1_TAR
+  151 000000B8 6836            LDR              R6, [R6]
+  152 000000BA EA4F 1616       LSR              R6, #4
+  153 000000BE         
+
+
+
+ARM Macro Assembler    Page 5 
+
+
+  154 000000BE 4871            LDR              R0, =GPIO_PORTB_DATA
+  155 000000C0 6800            LDR              R0, [R0]
+  156 000000C2 F000 0010       AND              R0, #0x10
+  157 000000C6 2810            CMP              R0, #0x10
+  158 000000C8 D109            BNE              _negedge
+  159 000000CA         _posedge
+  160 000000CA F1B8 0F03       CMP              R8, #3
+  161 000000CE BF08 F04F 
+              0901             MOVEQ            R9, #1
+  162 000000D4 F1B8 0801       SUBS             R8, #1
+  163 000000D8 D00B            BEQ              print
+  164 000000DA 46B3            MOV              R11, R6
+  165 000000DC E7E2            B                loop
+  166 000000DE         _negedge
+  167 000000DE F1B8 0F03       CMP              R8, #3
+  168 000000E2 BF08 F04F 
+              0902             MOVEQ            R9, #2
+  169 000000E8 F1B8 0801       SUBS             R8, #1
+  170 000000EC D001            BEQ              print
+  171 000000EE 46B4            MOV              R12, R6
+  172 000000F0 E7D8            B                loop
+  173 000000F2         
+  174 000000F2         
+  175 000000F2         
+  176 000000F2 F04F 0803 
+                       print   MOV              R8, #3
+  177 000000F6 F1B9 0F00       CMP              R9, #0
+  178 000000FA D108            BNE              check
+  179 000000FC         
+  180 000000FC F04F 0900       MOV              R9, #0
+  181 00000100 F04F 0A1E       MOV              R10, #30
+  182 00000104 485D            LDR              R0, =TIMER1_ICR
+  183 00000106 F04F 0104       MOV              R1, #0x04
+  184 0000010A 6001            STR              R1, [R0]
+  185 0000010C E7CA            B                loop
+  186 0000010E         ;CHECK TIMEOUT
+  187 0000010E 495A    check   LDR              R1, =TIMER1_RIS
+  188 00000110 680A            LDR              R2, [R1]
+  189 00000112 F012 0201       ANDS             R2, #0x01   ; isolate TATORIS b
+                                                            it
+  190 00000116 D004            BEQ              continue
+  191 00000118 4858            LDR              R0, =TIMER1_ICR
+  192 0000011A F04F 0104       MOV              R1, #0x04
+  193 0000011E 6001            STR              R1, [R0]
+  194 00000120 E7C0            B                loop
+  195 00000122         
+  196 00000122 F640 70FE 
+                       continue
+                               MOV              R0, #0xFFE
+  197 00000126 4584            CMP              R12, R0
+  198 00000128 D07D            BEQ              finish
+  199 0000012A F04F 050A       MOV              R5,#0xA
+  200 0000012E F7FF FFFE       BL               OutChar
+  201 00000132 F1B9 0F02       CMP              R9, #2
+  202 00000136 D03B            BEQ              negprint
+  203 00000138         ;PULSE WIDTH
+  204 00000138 EBAB 070C       SUB              R7, R11, R12
+  205 0000013C 4639            MOV              R1, R7
+  206 0000013E F04F 0557       MOV              R5,#0x57
+
+
+
+ARM Macro Assembler    Page 6 
+
+
+  207 00000142 F7FF FFFE       BL               OutChar
+  208 00000146 F04F 053D       MOV              R5,#0x3D
+  209 0000014A F7FF FFFE       BL               OutChar
+  210 0000014E B500            PUSH             {LR}
+  211 00000150 F7FF FFFE       BL               CONVRT
+  212 00000154 F85D EB04       POP              {LR}
+  213 00000158         ; PERIOD
+  214 00000158 EBAB 0706       SUB              R7, R11, R6
+  215 0000015C F04F 0520       MOV              R5,#0x20
+  216 00000160 F7FF FFFE       BL               OutChar
+  217 00000164 F04F 0550       MOV              R5,#0x50
+  218 00000168 F7FF FFFE       BL               OutChar
+  219 0000016C F04F 053D       MOV              R5,#0x3D
+  220 00000170 F7FF FFFE       BL               OutChar
+  221 00000174 B500            PUSH             {LR}
+  222 00000176 F7FF FFFE       BL               CONVRT
+  223 0000017A F85D EB04       POP              {LR}
+  224 0000017E         ; DUTY CYCLE
+  225 0000017E F04F 0264       MOV              R2, #100
+  226 00000182 FB01 F102       MUL              R1, R2
+  227 00000186 FBB1 F7F7       UDIV             R7, R1, R7
+  228 0000018A F04F 0520       MOV              R5,#0x20
+  229 0000018E F7FF FFFE       BL               OutChar
+  230 00000192 F04F 0544       MOV              R5,#0x44
+  231 00000196 F7FF FFFE       BL               OutChar
+  232 0000019A F04F 053D       MOV              R5,#0x3D
+  233 0000019E F7FF FFFE       BL               OutChar
+  234 000001A2 B500            PUSH             {LR}
+  235 000001A4 F7FF FFFE       BL               CONVRT
+  236 000001A8 F85D EB04       POP              {LR}
+  237 000001AC 46B3            MOV              R11, R6
+  238 000001AE E03A            B                finish
+  239 000001B0         
+  240 000001B0         negprint                             ;PULSE WIDTH
+  241 000001B0 EBAB 0706       SUB              R7, R11, R6
+  242 000001B4 4639            MOV              R1, R7
+  243 000001B6 F04F 0557       MOV              R5,#0x57
+  244 000001BA F7FF FFFE       BL               OutChar
+  245 000001BE F04F 053D       MOV              R5,#0x3D
+  246 000001C2 F7FF FFFE       BL               OutChar
+  247 000001C6 B500            PUSH             {LR}
+  248 000001C8 F7FF FFFE       BL               CONVRT
+  249 000001CC F85D EB04       POP              {LR}
+  250 000001D0         ; PERIOD
+  251 000001D0 EBAC 0706       SUB              R7, R12, R6
+  252 000001D4 F04F 0520       MOV              R5,#0x20
+  253 000001D8 F7FF FFFE       BL               OutChar
+  254 000001DC F04F 0550       MOV              R5,#0x50
+  255 000001E0 F7FF FFFE       BL               OutChar
+  256 000001E4 F04F 053D       MOV              R5,#0x3D
+  257 000001E8 F7FF FFFE       BL               OutChar
+  258 000001EC B500            PUSH             {LR}
+  259 000001EE F7FF FFFE       BL               CONVRT
+  260 000001F2 F85D EB04       POP              {LR}
+  261 000001F6         ; DUTY CYCLE
+  262 000001F6 F04F 0264       MOV              R2, #100
+  263 000001FA FB01 F102       MUL              R1, R2
+  264 000001FE FBB1 F7F7       UDIV             R7, R1, R7
+  265 00000202 F04F 0520       MOV              R5,#0x20
+
+
+
+ARM Macro Assembler    Page 7 
+
+
+  266 00000206 F7FF FFFE       BL               OutChar
+  267 0000020A F04F 0544       MOV              R5,#0x44
+  268 0000020E F7FF FFFE       BL               OutChar
+  269 00000212 F04F 053D       MOV              R5,#0x3D
+  270 00000216 F7FF FFFE       BL               OutChar
+  271 0000021A B500            PUSH             {LR}
+  272 0000021C F7FF FFFE       BL               CONVRT
+  273 00000220 F85D EB04       POP              {LR}
+  274 00000224 46B4            MOV              R12, R6
+  275 00000226         ; clear interrupt flag
+  276 00000226         finish                               ;MOV R5,#0xA
+  277 00000226         ;BL OutChar
+  278 00000226 F04F 0900       MOV              R9, #0
+  279 0000022A F04F 0A14       MOV              R10, #20
+  280 0000022E F7FF FFFE 
+                       delay   BL               DELAY100
+  281 00000232 F1BA 0A01       SUBS             R10, #1
+  282 00000236 D1FA            BNE              delay
+  283 00000238 4810            LDR              R0, =TIMER1_ICR
+  284 0000023A F04F 0104       MOV              R1, #0x04
+  285 0000023E 6001            STR              R1, [R0]
+  286 00000240 E730            B                loop
+  287 00000242         
+  288 00000242                 END
+              00 00 400FE608 
+              40005400 
+              40005420 
+              4000552C 
+              40005528 
+              4000551C 
+              400FE604 
+              4003100C 
+              40031000 
+              40031004 
+              40031038 
+              40031028 
+              40031018 
+              4003101C 
+              40031024 
+              40031048 
+              40005040 
+Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M4.fp --apcs=int
+erwork --depend=.\objects\pulse_probe.d -o.\objects\pulse_probe.o -I.\RTE\_Targ
+et_1 -IC:\Keil_v5\ARM\PACK\Keil\TM4C_DFP\1.1.0\Device\Include\TM4C123 -IC:\Keil
+_v5\ARM\CMSIS\Include --predefine="__EVAL SETA 1" --predefine="__UVISION_VERSIO
+N SETA 526" --predefine="TM4C123GH6PM SETA 1" --list=.\listings\pulse_probe.lst
+ pulse_probe.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+DUTY 0000001A
+
+Symbol: DUTY
+   Definitions
+      At line 9 in file pulse_probe.s
+   Uses
+      None
+Comment: DUTY unused
+PERIOD 0000000F
+
+Symbol: PERIOD
+   Definitions
+      At line 8 in file pulse_probe.s
+   Uses
+      None
+Comment: PERIOD unused
+PWIDTH 00000000
+
+Symbol: PWIDTH
+   Definitions
+      At line 7 in file pulse_probe.s
+   Uses
+      None
+Comment: PWIDTH unused
+sdata 00000000
+
+Symbol: sdata
+   Definitions
+      At line 5 in file pulse_probe.s
+   Uses
+      None
+Comment: sdata unused
+4 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+__main 00000000
+
+Symbol: __main
+   Definitions
+      At line 51 in file pulse_probe.s
+   Uses
+      At line 49 in file pulse_probe.s
+Comment: __main used once
+_negedge 000000DE
+
+Symbol: _negedge
+   Definitions
+      At line 166 in file pulse_probe.s
+   Uses
+      At line 158 in file pulse_probe.s
+Comment: _negedge used once
+_posedge 000000CA
+
+Symbol: _posedge
+   Definitions
+      At line 159 in file pulse_probe.s
+   Uses
+      None
+Comment: _posedge unused
+check 0000010E
+
+Symbol: check
+   Definitions
+      At line 187 in file pulse_probe.s
+   Uses
+      At line 178 in file pulse_probe.s
+Comment: check used once
+continue 00000122
+
+Symbol: continue
+   Definitions
+      At line 196 in file pulse_probe.s
+   Uses
+      At line 190 in file pulse_probe.s
+Comment: continue used once
+delay 0000022E
+
+Symbol: delay
+   Definitions
+      At line 280 in file pulse_probe.s
+   Uses
+      At line 282 in file pulse_probe.s
+Comment: delay used once
+finish 00000226
+
+Symbol: finish
+   Definitions
+      At line 276 in file pulse_probe.s
+   Uses
+      At line 198 in file pulse_probe.s
+      At line 238 in file pulse_probe.s
+
+loop 000000A4
+
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+Relocatable symbols
+
+Symbol: loop
+   Definitions
+      At line 138 in file pulse_probe.s
+   Uses
+      At line 142 in file pulse_probe.s
+      At line 165 in file pulse_probe.s
+      At line 172 in file pulse_probe.s
+      At line 185 in file pulse_probe.s
+      At line 194 in file pulse_probe.s
+      At line 286 in file pulse_probe.s
+
+main 00000000
+
+Symbol: main
+   Definitions
+      At line 40 in file pulse_probe.s
+   Uses
+      None
+Comment: main unused
+negprint 000001B0
+
+Symbol: negprint
+   Definitions
+      At line 240 in file pulse_probe.s
+   Uses
+      At line 202 in file pulse_probe.s
+Comment: negprint used once
+print 000000F2
+
+Symbol: print
+   Definitions
+      At line 176 in file pulse_probe.s
+   Uses
+      At line 163 in file pulse_probe.s
+      At line 170 in file pulse_probe.s
+
+11 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Absolute symbols
+
+GPIO_PORTB_AFSEL 40005420
+
+Symbol: GPIO_PORTB_AFSEL
+   Definitions
+      At line 29 in file pulse_probe.s
+   Uses
+      At line 65 in file pulse_probe.s
+Comment: GPIO_PORTB_AFSEL used once
+GPIO_PORTB_AMSEL 40005528
+
+Symbol: GPIO_PORTB_AMSEL
+   Definitions
+      At line 31 in file pulse_probe.s
+   Uses
+      At line 75 in file pulse_probe.s
+Comment: GPIO_PORTB_AMSEL used once
+GPIO_PORTB_DATA 40005040
+
+Symbol: GPIO_PORTB_DATA
+   Definitions
+      At line 27 in file pulse_probe.s
+   Uses
+      At line 154 in file pulse_probe.s
+Comment: GPIO_PORTB_DATA used once
+GPIO_PORTB_DEN 4000551C
+
+Symbol: GPIO_PORTB_DEN
+   Definitions
+      At line 30 in file pulse_probe.s
+   Uses
+      At line 79 in file pulse_probe.s
+Comment: GPIO_PORTB_DEN used once
+GPIO_PORTB_DIR 40005400
+
+Symbol: GPIO_PORTB_DIR
+   Definitions
+      At line 28 in file pulse_probe.s
+   Uses
+      At line 60 in file pulse_probe.s
+Comment: GPIO_PORTB_DIR used once
+GPIO_PORTB_PCTL 4000552C
+
+Symbol: GPIO_PORTB_PCTL
+   Definitions
+      At line 32 in file pulse_probe.s
+   Uses
+      At line 70 in file pulse_probe.s
+Comment: GPIO_PORTB_PCTL used once
+SYSCTL_RCGCGPIO 400FE608
+
+Symbol: SYSCTL_RCGCGPIO
+   Definitions
+      At line 35 in file pulse_probe.s
+   Uses
+      At line 53 in file pulse_probe.s
+Comment: SYSCTL_RCGCGPIO used once
+SYSCTL_RCGCTIMER 400FE604
+
+Symbol: SYSCTL_RCGCTIMER
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+Absolute symbols
+
+   Definitions
+      At line 36 in file pulse_probe.s
+   Uses
+      At line 84 in file pulse_probe.s
+Comment: SYSCTL_RCGCTIMER used once
+TIMER1_CFG 40031000
+
+Symbol: TIMER1_CFG
+   Definitions
+      At line 15 in file pulse_probe.s
+   Uses
+      At line 97 in file pulse_probe.s
+Comment: TIMER1_CFG used once
+TIMER1_CTL 4003100C
+
+Symbol: TIMER1_CTL
+   Definitions
+      At line 17 in file pulse_probe.s
+   Uses
+      At line 92 in file pulse_probe.s
+      At line 105 in file pulse_probe.s
+      At line 123 in file pulse_probe.s
+
+TIMER1_ICR 40031024
+
+Symbol: TIMER1_ICR
+   Definitions
+      At line 20 in file pulse_probe.s
+   Uses
+      At line 145 in file pulse_probe.s
+      At line 182 in file pulse_probe.s
+      At line 191 in file pulse_probe.s
+      At line 283 in file pulse_probe.s
+
+TIMER1_IMR 40031018
+
+Symbol: TIMER1_IMR
+   Definitions
+      At line 18 in file pulse_probe.s
+   Uses
+      At line 118 in file pulse_probe.s
+Comment: TIMER1_IMR used once
+TIMER1_RIS 4003101C
+
+Symbol: TIMER1_RIS
+   Definitions
+      At line 19 in file pulse_probe.s
+   Uses
+      At line 138 in file pulse_probe.s
+      At line 187 in file pulse_probe.s
+
+TIMER1_TAILR 40031028
+
+Symbol: TIMER1_TAILR
+   Definitions
+      At line 21 in file pulse_probe.s
+   Uses
+      At line 114 in file pulse_probe.s
+Comment: TIMER1_TAILR used once
+
+
+
+ARM Macro Assembler    Page 3 Alphabetic symbol ordering
+Absolute symbols
+
+TIMER1_TAMATCHR 40031030
+
+Symbol: TIMER1_TAMATCHR
+   Definitions
+      At line 22 in file pulse_probe.s
+   Uses
+      None
+Comment: TIMER1_TAMATCHR unused
+TIMER1_TAMR 40031004
+
+Symbol: TIMER1_TAMR
+   Definitions
+      At line 16 in file pulse_probe.s
+   Uses
+      At line 101 in file pulse_probe.s
+Comment: TIMER1_TAMR used once
+TIMER1_TAPR 40031038
+
+Symbol: TIMER1_TAPR
+   Definitions
+      At line 23 in file pulse_probe.s
+   Uses
+      At line 110 in file pulse_probe.s
+Comment: TIMER1_TAPR used once
+TIMER1_TAR 40031048
+
+Symbol: TIMER1_TAR
+   Definitions
+      At line 24 in file pulse_probe.s
+   Uses
+      At line 150 in file pulse_probe.s
+Comment: TIMER1_TAR used once
+18 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+External symbols
+
+CONVRT 00000000
+
+Symbol: CONVRT
+   Definitions
+      At line 46 in file pulse_probe.s
+   Uses
+      At line 211 in file pulse_probe.s
+      At line 222 in file pulse_probe.s
+      At line 235 in file pulse_probe.s
+      At line 248 in file pulse_probe.s
+      At line 259 in file pulse_probe.s
+      At line 272 in file pulse_probe.s
+
+DELAY100 00000000
+
+Symbol: DELAY100
+   Definitions
+      At line 47 in file pulse_probe.s
+   Uses
+      At line 280 in file pulse_probe.s
+Comment: DELAY100 used once
+My_Timer0A_Handler 00000000
+
+Symbol: My_Timer0A_Handler
+   Definitions
+      At line 42 in file pulse_probe.s
+   Uses
+      None
+Comment: My_Timer0A_Handler unused
+My_Timer1A_Handler 00000000
+
+Symbol: My_Timer1A_Handler
+   Definitions
+      At line 45 in file pulse_probe.s
+   Uses
+      None
+Comment: My_Timer1A_Handler unused
+OutChar 00000000
+
+Symbol: OutChar
+   Definitions
+      At line 48 in file pulse_probe.s
+   Uses
+      At line 200 in file pulse_probe.s
+      At line 207 in file pulse_probe.s
+      At line 209 in file pulse_probe.s
+      At line 216 in file pulse_probe.s
+      At line 218 in file pulse_probe.s
+      At line 220 in file pulse_probe.s
+      At line 229 in file pulse_probe.s
+      At line 231 in file pulse_probe.s
+      At line 233 in file pulse_probe.s
+      At line 244 in file pulse_probe.s
+      At line 246 in file pulse_probe.s
+      At line 253 in file pulse_probe.s
+      At line 255 in file pulse_probe.s
+      At line 257 in file pulse_probe.s
+      At line 266 in file pulse_probe.s
+      At line 268 in file pulse_probe.s
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+External symbols
+
+      At line 270 in file pulse_probe.s
+
+PULSE_INIT 00000000
+
+Symbol: PULSE_INIT
+   Definitions
+      At line 43 in file pulse_probe.s
+   Uses
+      At line 51 in file pulse_probe.s
+Comment: PULSE_INIT used once
+PULSE_PROBE 00000000
+
+Symbol: PULSE_PROBE
+   Definitions
+      At line 44 in file pulse_probe.s
+   Uses
+      None
+Comment: PULSE_PROBE unused
+7 symbols
+376 symbols in table

@@ -1,0 +1,11 @@
+--cpu=Cortex-M4.fp
+".\objects\startup.o"
+".\objects\pulse_probe.o"
+".\objects\convrt.o"
+".\objects\pulse.o"
+".\objects\delay100.o"
+".\objects\outchar.o"
+".\objects\outstr.o"
+--ro-base 0x00000000 --entry 0x00000000 --rw-base 0x20000000 --entry Reset_Handler --first __Vectors --strict --summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
+--info sizes --info totals --info unused --info veneers
+--list ".\Listings\pulse_probe.map" -o .\Objects\pulse_probe.axf

@@ -1,0 +1,215 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000         ;*******************************************************
+                       ********
+    2 00000000         ; Program BCD.s
+    3 00000000         ; This program converts the hex value to a BCD number wi
+                       th three
+    4 00000000         ; digits (X.YZ) between 3.30 and 0.00 .
+    5 00000000         ;*******************************************************
+                       ******** 
+    6 00000000         ; EQU Directives
+    7 00000000         
+    8 00000000         ;*******************************************************
+                       ********
+    9 00000000         ;LABEL   DIRECTIVE VALUE   COMMENTs
+   10 00000000         
+   11 00000000         ;*******************************************************
+                       ********
+   12 00000000         ;LABEL  DIRECTIVE VALUE    COMMENT
+   13 00000000                 AREA             main, READONLY, CODE
+   14 00000000                 THUMB
+   15 00000000                 EXTERN           __ADC
+   16 00000000                 EXTERN           CONVRT      ; Reference externa
+                                                            l subroutines 
+   17 00000000                 EXTERN           OutChar
+   18 00000000                 EXPORT           __main      ; Make available
+   19 00000000         
+   20 00000000 B500    __main  PUSH             {LR}
+   21 00000002 F7FF FFFE       BL               __ADC
+   22 00000006 F85D EB04       POP              {LR}
+   23 0000000A B500            PUSH             {LR}
+   24 0000000C F7FF FFFE       BL               CONVRT
+   25 00000010 F85D EB04       POP              {LR}
+   26 00000014 4638            MOV              R0, R7
+   27 00000016 F7FF FFFE 
+                       loop    BL               __ADC
+   28 0000001A 4287            CMP              R7, R0
+   29 0000001C BF2C            ITE              HS          ; R1 <- |R7-R0|
+   30 0000001E 1A39            SUBHS            R1, R7, R0  ;  
+   31 00000020 1BC1            SUBLO            R1, R0, R7  ; 
+   32 00000022 2914            CMP              R1, #20     ; Treshold = 0.20 V
+                                                            olt
+   33 00000024 D3F7            BLO              loop
+   34 00000026 2F0A            CMP              R7, #10     ; Single digit or n
+                                                            ot
+   35 00000028 D216            BHS              high
+   36 0000002A F04F 050A       MOV              R5,#0xA     ; New line
+   37 0000002E F7FF FFFE       BL               OutChar
+   38 00000032 F04F 0530       MOV              R5,#0x30    ; print "0"
+   39 00000036 F7FF FFFE       BL               OutChar
+   40 0000003A F04F 052E       MOV              R5,#0x2E    ; print "."
+   41 0000003E F7FF FFFE       BL               OutChar
+   42 00000042 F04F 0530       MOV              R5,#0x30    ; print "0"
+   43 00000046 F7FF FFFE       BL               OutChar
+   44 0000004A B500            PUSH             {LR}
+   45 0000004C F7FF FFFE       BL               CONVRT      ; print single digi
+                                                            t
+   46 00000050 F85D EB04       POP              {LR}
+   47 00000054 4638            MOV              R0, R7
+   48 00000056 E7DE            B                loop
+   49 00000058         
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+   50 00000058 F04F 0264 
+                       high    MOV              R2, #100
+   51 0000005C 46B8            MOV              R8, R7
+   52 0000005E FBB7 F7F2       UDIV             R7, R2
+   53 00000062 F04F 050A       MOV              R5,#0xA     ; add new line
+   54 00000066 F7FF FFFE       BL               OutChar
+   55 0000006A B500            PUSH             {LR}
+   56 0000006C F7FF FFFE       BL               CONVRT      ; print the quotien
+                                                            t
+   57 00000070 F85D EB04       POP              {LR}
+   58 00000074 F04F 052E       MOV              R5,#0x2E    ; print "."
+   59 00000078 F7FF FFFE       BL               OutChar
+   60 0000007C 2F00            CMP              R7, #0
+   61 0000007E D107            BNE              THREE
+   62 00000080 4647            MOV              R7, R8
+   63 00000082 B500            PUSH             {LR}
+   64 00000084 F7FF FFFE       BL               CONVRT      ; print the quotien
+                                                            t
+   65 00000088 F85D EB04       POP              {LR}
+   66 0000008C 4640            MOV              R0, R8
+   67 0000008E E7C2            B                loop
+   68 00000090         
+   69 00000090 FB07 F702 
+                       THREE   MUL              R7, R2
+   70 00000094 EBB8 0707       SUBS             R7, R8, R7
+   71 00000098 2F0A            CMP              R7, #10
+   72 0000009A D203            BHS              high2
+   73 0000009C F04F 0530       MOV              R5,#0x30    ; print "0"
+   74 000000A0 F7FF FFFE       BL               OutChar
+   75 000000A4 B500    high2   PUSH             {LR}
+   76 000000A6 F7FF FFFE       BL               CONVRT      ; print the remaind
+                                                            er
+   77 000000AA F85D EB04       POP              {LR}
+   78 000000AE 4640            MOV              R0, R8
+   79 000000B0 E7B1            B                loop
+   80 000000B2         
+   81 000000B2         
+   82 000000B2                 END
+Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M4.fp --apcs=int
+erwork --depend=.\objects\bcd.d -o.\objects\bcd.o -I.\RTE\_Target_1 -IC:\Keil_v
+5\ARM\PACK\Keil\TM4C_DFP\1.1.0\Device\Include\TM4C123 -IC:\Keil_v5\ARM\CMSIS\In
+clude --predefine="__EVAL SETA 1" --predefine="__UVISION_VERSION SETA 526" --pr
+edefine="TM4C123GH6PM SETA 1" --list=.\listings\bcd.lst BCD.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+THREE 00000090
+
+Symbol: THREE
+   Definitions
+      At line 69 in file BCD.s
+   Uses
+      At line 61 in file BCD.s
+Comment: THREE used once
+__main 00000000
+
+Symbol: __main
+   Definitions
+      At line 20 in file BCD.s
+   Uses
+      At line 18 in file BCD.s
+Comment: __main used once
+high 00000058
+
+Symbol: high
+   Definitions
+      At line 50 in file BCD.s
+   Uses
+      At line 35 in file BCD.s
+Comment: high used once
+high2 000000A4
+
+Symbol: high2
+   Definitions
+      At line 75 in file BCD.s
+   Uses
+      At line 72 in file BCD.s
+Comment: high2 used once
+loop 00000016
+
+Symbol: loop
+   Definitions
+      At line 27 in file BCD.s
+   Uses
+      At line 33 in file BCD.s
+      At line 48 in file BCD.s
+      At line 67 in file BCD.s
+      At line 79 in file BCD.s
+
+main 00000000
+
+Symbol: main
+   Definitions
+      At line 13 in file BCD.s
+   Uses
+      None
+Comment: main unused
+6 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+External symbols
+
+CONVRT 00000000
+
+Symbol: CONVRT
+   Definitions
+      At line 16 in file BCD.s
+   Uses
+      At line 24 in file BCD.s
+      At line 45 in file BCD.s
+      At line 56 in file BCD.s
+      At line 64 in file BCD.s
+      At line 76 in file BCD.s
+
+OutChar 00000000
+
+Symbol: OutChar
+   Definitions
+      At line 17 in file BCD.s
+   Uses
+      At line 37 in file BCD.s
+      At line 39 in file BCD.s
+      At line 41 in file BCD.s
+      At line 43 in file BCD.s
+      At line 54 in file BCD.s
+      At line 59 in file BCD.s
+      At line 74 in file BCD.s
+
+__ADC 00000000
+
+Symbol: __ADC
+   Definitions
+      At line 15 in file BCD.s
+   Uses
+      At line 21 in file BCD.s
+      At line 27 in file BCD.s
+
+3 symbols
+343 symbols in table

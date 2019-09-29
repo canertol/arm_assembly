@@ -1,0 +1,115 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000         ;*******************************************************
+                       ********
+    2 00000000         ; Program DELAY100.s
+    3 00000000         ; This program, causes approximately 100 msec delay upon
+                        calling.
+    4 00000000         ;*******************************************************
+                       ******** 
+    5 00000000         ; EQU Directives
+    6 00000000         ;*******************************************************
+                       ********
+    7 00000000         ;LABEL  DIRECTIVE VALUE  COMMENT
+    8 00000000 00000000 
+                       COUNTER EQU              0x0
+    9 00000000 00030D3A 
+                       LIMIT   EQU              0x30D3A
+   10 00000000         ;*******************************************************
+                       ********
+   11 00000000         ;LABEL  DIRECTIVE VALUE  COMMENT
+   12 00000000                 AREA             main, READONLY, CODE
+   13 00000000                 THUMB
+   14 00000000                 EXPORT           DELAY100    ; Make available
+   15 00000000         
+   16 00000000         DELAY100
+   17 00000000 E92D 1FFF       PUSH             {R0-R12}
+   18 00000004 B500            PUSH             {LR}
+   19 00000006 F04F 0000       LDR              R0,=COUNTER ; R0<- COUNTER
+   20 0000000A 4905            LDR              R1,=LIMIT
+   21 0000000C F100 0001 
+                       loop    ADD              R0,#1       ; COUNTER++
+   22 00000010 4288            CMP              R0,R1
+   23 00000012 D000            BEQ              exit
+   24 00000014 E7FA            B                loop
+   25 00000016         
+   26 00000016 F85D EB04 
+                       exit    POP              {LR}
+   27 0000001A E8BD 1FFF       POP              {R0-R12}
+   28 0000001E 4770            BX               LR
+   29 00000020         
+   30 00000020                 END
+              00030D3A 
+Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M4.fp --apcs=int
+erwork --depend=.\objects\delay100.d -o.\objects\delay100.o -I.\RTE\_Target_1 -
+IC:\Keil_v5\ARM\PACK\Keil\TM4C_DFP\1.1.0\Device\Include\TM4C123 -IC:\Keil_v5\AR
+M\CMSIS\Include --predefine="__EVAL SETA 1" --predefine="__UVISION_VERSION SETA
+ 526" --predefine="TM4C123GH6PM SETA 1" --list=.\listings\delay100.lst DELAY100
+.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+DELAY100 00000000
+
+Symbol: DELAY100
+   Definitions
+      At line 16 in file DELAY100.s
+   Uses
+      At line 14 in file DELAY100.s
+Comment: DELAY100 used once
+exit 00000016
+
+Symbol: exit
+   Definitions
+      At line 26 in file DELAY100.s
+   Uses
+      At line 23 in file DELAY100.s
+Comment: exit used once
+loop 0000000C
+
+Symbol: loop
+   Definitions
+      At line 21 in file DELAY100.s
+   Uses
+      At line 24 in file DELAY100.s
+Comment: loop used once
+main 00000000
+
+Symbol: main
+   Definitions
+      At line 12 in file DELAY100.s
+   Uses
+      None
+Comment: main unused
+4 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Absolute symbols
+
+COUNTER 00000000
+
+Symbol: COUNTER
+   Definitions
+      At line 8 in file DELAY100.s
+   Uses
+      At line 19 in file DELAY100.s
+Comment: COUNTER used once
+LIMIT 00030D3A
+
+Symbol: LIMIT
+   Definitions
+      At line 9 in file DELAY100.s
+   Uses
+      At line 20 in file DELAY100.s
+Comment: LIMIT used once
+2 symbols
+342 symbols in table
